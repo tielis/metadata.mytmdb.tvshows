@@ -133,7 +133,7 @@ msgid "Enable Trailer"
 msgstr ""
 
 msgctxt "#30306"
-msgid "Addon Player"
+msgid "Addon player"
 msgstr ""
 
 msgctxt "#30307"
@@ -142,5 +142,13 @@ msgstr ""
 
 msgctxt "#30308"
 msgid "Tubed"
+msgstr ""
+
+msgctxt "#30309"
+msgid "URL check (slower)"
+msgstr ""
+
+msgctxt "#30310"
+msgid "Trailer log"
 msgstr ""
 
