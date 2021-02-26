@@ -24,7 +24,7 @@ from __future__ import absolute_import, unicode_literals
 
 import re, json
 from collections import OrderedDict, namedtuple
-from .utils import safe_get, logger
+from .utils import safe_get, logger, trailer_log
 from . import settings, api_utils
 
 try:
@@ -259,8 +259,8 @@ def add_main_show_info(list_item, show_info, full_info=True):
             if mpaa:
                 video['Mpaa'] = settings.CERT_PREFIX + mpaa
         video['credits'] = video['writer'] = _get_credits(show_info)
-        if settings.ENABTRAILER:
-            trailer = _parse_trailer(show_info.get('videos', {}).get('results', {}))
+        if settings.ENABTRAILER:            
+            trailer = _parse_trailer(show_info.get('videos', {}).get('results', {}),showname)
             if trailer:
                 video['trailer'] = trailer
         list_item = set_show_artwork(show_info, list_item)
@@ -378,7 +378,12 @@ def parse_media_id(title):
     return None
 
 
-def _parse_trailer(results):
+def _parse_trailer(results, showname):    
+    trailerLog = settings.TRAILERLOG
+    trailerChk = settings.TRAILERCHK
+    msg = [" / ok           /   ",
+           " / Not Trailer  /   ",
+           " / Unavailable  /   "]
     if results:
         if settings.PLAYERSOPT == 'tubed':
             addon_player = 'plugin://plugin.video.tubed/?mode=play&video_id='
@@ -388,21 +393,28 @@ def _parse_trailer(results):
         for result in results:
             if result.get('site') == 'YouTube':
                 key = result.get('key')
-                if result.get('type') == 'Trailer':                   
-                    if _check_youtube (key):                        
+                if result.get('type') == 'Trailer':
+                    if not  trailerChk:
+                        return addon_player + key
+                    elif _check_youtube (key):
+                        if  trailerLog: trailer_log(key, msg[0], showname)
                         return addon_player+key  # video is available and is defined as "Trailer" by TMDB. Perfect link!                    
-                else:
+                else:                    
                     backup_keys.append(key)      # video is available, but NOT defined as "Trailer" by TMDB. Saving it as backup in case it doesn't find any perfect link.                                 
-        for keybackup in backup_keys:            
-            if _check_youtube (keybackup):                
-                return addon_player+keybackup                    
+        for keybackup in backup_keys:
+            if not  trailerChk:
+                return addon_player + keybackup
+            elif _check_youtube (keybackup):
+                if  trailerLog: trailer_log(key, msg[1], showname)
+                return addon_player + keybackup    
+    if  trailerLog: trailer_log("           ", msg[2], showname)
     return None             
 
 
-def _check_youtube (key):
-    chk_link = "https://www.youtube.com/watch?v="+key            
+def _check_youtube (key):    
+    chk_link = "https://www.youtube.com/embed/"+key            
     check = api_utils.load_info(chk_link, resp_type = 'not_json')
-    if not check or "Video unavailable" in check:       # video not available   
-        return False                            
+    if not check or 'PlayerError'  in check or not '<link rel="canonical"' in check:  # video not available        
+        return False    
     return True
   

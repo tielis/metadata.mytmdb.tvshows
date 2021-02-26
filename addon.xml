@@ -6,6 +6,7 @@
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
     <import addon="xbmc.metadata" version="2.1.0"/>
+    <import addon="script.module.web-pdb" version="1.5.6"/>
   </requires>
   <extension point="xbmc.metadata.scraper.tvshows" library="main.py" cachepersistence="00:15"/>
   <extension point="xbmc.addon.metadata">
@@ -14,7 +15,7 @@ TV show trailers from YouTube now included in metadata (with option to turn it o
 option to select which YouTube addon is used to play trailers
 scraper now parses IDs from TVDB and IMDB URLs for identifying shows
 	</news>
-    <summary lang="en_GB">Fetch TV Show metadata from themoviedb.org</summary>
+    <summary lang="en_GB">Python TMDB TV show Scraper</summary>
     <description lang="en_GB">The Movie Database (TMDb) is a community built movie and TV database. Every piece of data has been added by our amazing community dating back to 2008. TMDb's strong international focus and breadth of data is largely unmatched and something we're incredibly proud of. Put simply, we live and breathe community and that's precisely what makes us different.</description>
     <platform>all</platform>
     <license>GPL-3.0-or-later</license>
