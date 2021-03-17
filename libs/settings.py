@@ -75,6 +75,7 @@ source_settings = json.loads(source_params.get('pathSettings', {}))
 
 KEEPTITLE =source_settings.get('keeporiginaltitle', ADDON.getSettingBool('keeporiginaltitle'))
 CATLANDSCAPE = source_settings.get('cat_landscape', True)
+STUDIOCOUNTRY = source_settings.get('studio_country', True)
 ENABTRAILER = source_settings.get('enab_trailer', ADDON.getSettingBool('enab_trailer'))
 PLAYERSOPT = source_settings.get('players_opt', ADDON.getSettingString('players_opt')).lower()
 TRAILERCHK = source_settings.get('trailer_chk', ADDON.getSettingBool('trailer_chk'))
