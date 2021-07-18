@@ -78,14 +78,17 @@ def trailer_log(key, msg, title):
 
     lines =  []
     found = False
-    txt_msg = unicodedata.normalize('NFC',str(key + msg + title + '\n'))
+    title = unicodedata.normalize('NFC',str(title))
+    txt_msg = key + msg + title + '\n'
     try:
         makedirs(addonDataDir)
-        f = open(Logtxt, "r")
-        lines = f.readlines()
-        f.close()
+       
     except:   
         pass
+    f = open(Logtxt, "a+", encoding='utf-8')
+    f.seek(0)
+    lines = f.readlines()
+    f.close()
     if lines:
         for i, line in enumerate(lines):        
             if title in line:
