@@ -20,15 +20,11 @@
 # IMDb ratings based on code in metadata.themoviedb.org.python by Team Kodi
 # pylint: disable=missing-docstring
 
-from __future__ import absolute_import
-
-import sys
-
+from sys import argv
 from libs.actions import router
 from libs.debugger import debug_exception
 
 if __name__ == '__main__':
-    with debug_exception():
-        import web_pdb; web_pdb.set_trace()
-        router(sys.argv[2][1:])
+    with debug_exception():      
+        router(argv[2][1:])
         

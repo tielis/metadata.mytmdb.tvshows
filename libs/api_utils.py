@@ -17,19 +17,13 @@
 
 """Functions to interact with various web site APIs"""
 
-from __future__ import absolute_import, unicode_literals
 
-import json
+from json import loads
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 from urllib.parse import urlencode
 from pprint import pformat
 from .utils import logger
-try:
-    from typing import Text, Optional, Union, List, Dict, Any  # pylint: disable=unused-import
-    InfoType = Dict[Text, Any]  # pylint: disable=invalid-name
-except ImportError:
-    pass
 
 HEADERS = {}
 
@@ -51,6 +45,11 @@ def load_info(url, params=None, default=None, resp_type='json', verboselog=False
     """
     if params:
         url = url + '?' + urlencode(params)
+
+    #f = open('D:\\show_req.txt', "a")
+    #f.write(url + '\n')
+    #f.close()
+      
     logger.debug('Calling URL "{}"'.format(url))
     req = Request(url, headers=HEADERS)
     try:
@@ -66,7 +65,7 @@ def load_info(url, params=None, default=None, resp_type='json', verboselog=False
     if response is None:
         resp = default
     elif resp_type.lower() == 'json':
-        resp = json.loads(response.read().decode('utf-8'))
+        resp = loads(response.read().decode('utf-8'))
     else:
         resp = response.read().decode('utf-8')
     if verboselog:

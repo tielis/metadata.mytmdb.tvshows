@@ -20,25 +20,16 @@
 
 """Functions to process data"""
 
-from __future__ import absolute_import, unicode_literals
-
-import re
-import json
+from re import compile, findall, search, I
 from collections import OrderedDict, namedtuple
 from .utils import safe_get, logger, trailer_log
 from . import settings, api_utils
 
-try:
-    from typing import Optional, Text, Dict, List, Any  # pylint: disable=unused-import
-    from xbmcgui import ListItem  # pylint: disable=unused-import
-    InfoType = Dict[Text, Any]  # pylint: disable=invalid-name
-except ImportError:
-    pass
 
 TMDB_PARAMS = {'api_key': settings.TMDB_CLOWNCAR, 'language': settings.LANG}
 BASE_URL = 'https://api.themoviedb.org/3/{}'
 FIND_URL = BASE_URL.format('find/{}')
-TAG_RE = re.compile(r'<[^>]+>')
+TAG_RE = compile(r'<[^>]+>')
 
 # Regular expressions are listed in order of priority.
 # "TMDB" provider is preferred than other providers (IMDB and TheTVDB),
@@ -85,7 +76,7 @@ def _set_cast(cast_info, list_item):
     cast = []
     for item in cast_info:
         data = {
-            'name': item['name'],
+            'name': item.get('name',''),
             'role': item.get('character', item.get('character_name', '')),
             'order': item['order'],
         }
@@ -154,7 +145,7 @@ def _set_rating(the_info, list_item, episode=False):
     return list_item
 
 
-def _add_season_info(show_info, list_item):
+def _add_season_info(show_info, list_item):    
     # type: (InfoType, ListItem) -> ListItem
     """Add info for show seasons"""
     for season in show_info['seasons']:
@@ -306,7 +297,7 @@ def add_main_show_info(list_item, show_info, full_info=True):
     return list_item
 
 
-def add_episode_info(list_item, episode_info, full_info=True):
+def add_episode_info(list_item, episode_info, full_info=True): 
     # type: (ListItem, InfoType, bool) -> ListItem
     """Add episode info to a list item"""
     video = {
@@ -322,9 +313,9 @@ def add_episode_info(list_item, episode_info, full_info=True):
         if summary is not None:
             video['plot'] = video['plotoutline'] = _clean_plot(summary)
         if safe_get(episode_info, 'air_date') is not None:
-            video['premiered'] = episode_info['air_date']
+            video['premiered'] = episode_info['air_date']        
         list_item = _set_cast(
-            episode_info['credits']['guest_stars'], list_item)
+            episode_info['guest_stars'], list_item)
         ext_ids = {'tmdb_id': episode_info['id']}
         ext_ids.update(episode_info.get('external_ids', {}))
         list_item = _set_unique_ids(ext_ids, list_item)
@@ -349,13 +340,13 @@ def parse_nfo_url(nfo):
     """Extract show ID and named seasons from NFO file contents"""
     # work around for xbmcgui.ListItem.addSeason overwriting named seasons from NFO files
     ns_regex = r'<namedseason number="(.*)">(.*)</namedseason>'
-    ns_match = re.findall(ns_regex, nfo, re.I)
+    ns_match = findall(ns_regex, nfo, I)
     sid_match = None
     ep_grouping = None
     for regexp in SHOW_ID_REGEXPS:
         logger.debug('trying regex to match service from parsing nfo:')
         logger.debug(regexp)
-        show_id_match = re.search(regexp, nfo, re.I)
+        show_id_match = search(regexp, nfo, I)
         if show_id_match:
             logger.debug('match group 1: ' + show_id_match.group(1))
             logger.debug('match group 2: ' + show_id_match.group(2))

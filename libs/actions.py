@@ -20,20 +20,14 @@
 
 """Plugin route actions"""
 
-from __future__ import absolute_import, unicode_literals
-
-import sys
-import urllib.parse
-import xbmcgui
-import xbmcplugin
+from sys import argv
+from urllib.parse import urlencode, quote, unquote, parse_qsl
+from xbmcgui import ListItem
+from xbmcplugin import addDirectoryItem, setResolvedUrl, endOfDirectory
 from . import tmdb, data_utils
 from .utils import logger, safe_get
-try:
-    from typing import Optional, Text, Union, ByteString  # pylint: disable=unused-import
-except ImportError:
-    pass
 
-HANDLE = int(sys.argv[1])  # type: int
+HANDLE = int(argv[1])  # type: int
 
 
 def find_show(title, year=None):
@@ -47,13 +41,13 @@ def find_show(title, year=None):
         show_name = search_result['name']
         if safe_get(search_result, 'first_air_date') is not None:
             show_name += ' ({})'.format(search_result['first_air_date'][:4])
-        list_item = xbmcgui.ListItem(show_name, offscreen=True)
+        list_item = ListItem(show_name, offscreen=True)
         show_info = search_result
         list_item = data_utils.add_main_show_info(
             list_item, show_info, full_info=False)
         # Below "url" is some unique ID string (may be an actual URL to a show page)
         # that is used to get information about a specific TV show.
-        xbmcplugin.addDirectoryItem(
+        addDirectoryItem(
             HANDLE,
             url=str(search_result['id']),
             listitem=list_item,
@@ -62,6 +56,7 @@ def find_show(title, year=None):
 
 
 def get_show_id_from_nfo(nfo):
+    
     # type: (Text) -> None
     """
     Get show ID by NFO file contents
@@ -82,10 +77,10 @@ def get_show_id_from_nfo(nfo):
         else:
             show_info = None
         if show_info is not None:
-            list_item = xbmcgui.ListItem(show_info['name'], offscreen=True)
+            list_item = ListItem(show_info['name'], offscreen=True)
             # "url" is some string that unique identifies a show.
             # It may be an actual URL of a TV show page.
-            xbmcplugin.addDirectoryItem(
+            addDirectoryItem(
                 HANDLE,
                 url=str(show_info['id']),
                 listitem=list_item,
@@ -96,24 +91,28 @@ def get_show_id_from_nfo(nfo):
 def get_details(show_id):
     # type: (Text) -> None
     """Get details about a specific show"""
-    logger.debug('Getting details for show id {}'.format(show_id))
-    show_info = tmdb.load_show_info(show_id)
-    f = open("d:\Show_info.txt", "a", encoding='utf-8')
-    f.write(str(show_info))
-    f.close()  
+ 
     
+    logger.debug('Getting details for show id {}'.format(show_id))
+
+    
+    show_info = tmdb.load_show_info(show_id)
+   
+    
+ 
     if show_info is not None:
-        list_item = xbmcgui.ListItem(show_info['name'], offscreen=True)
+        list_item = ListItem(show_info['name'], offscreen=True)
         list_item = data_utils.add_main_show_info(
             list_item, show_info, full_info=True)
-        xbmcplugin.setResolvedUrl(HANDLE, True, list_item)
+        setResolvedUrl(HANDLE, True, list_item)
+        
     else:
-        xbmcplugin.setResolvedUrl(
-            HANDLE, False, xbmcgui.ListItem(offscreen=True))
+        setResolvedUrl(
+            HANDLE, False, ListItem(offscreen=True))
 
 
 def get_episode_list(show_id):  # pylint: disable=missing-docstring
-    import web_pdb; web_pdb.set_trace()
+    
     # type: (Text) -> None
     logger.debug('Getting episode list for show id {}'.format(show_id))
     if not show_id.isdigit():
@@ -134,17 +133,17 @@ def get_episode_list(show_id):  # pylint: disable=missing-docstring
         for episode in show_info['episodes']:
             epname = episode.get('name', 'Episode ' +
                                  str(episode['episode_number']))
-            list_item = xbmcgui.ListItem(epname, offscreen=True)
+            list_item = ListItem(epname, offscreen=True)
             list_item = data_utils.add_episode_info(
                 list_item, episode, full_info=False)
-            encoded_ids = urllib.parse.urlencode(
+            encoded_ids = urlencode(
                 {'show_id': str(show_info['id']), 'episode_id': str(theindex)}
             )
             theindex = theindex + 1
             # Below "url" is some unique ID string (may be an actual URL to an episode page)
             # that allows to retrieve information about a specific episode.
-            url = urllib.parse.quote(encoded_ids)
-            xbmcplugin.addDirectoryItem(
+            url = quote(encoded_ids)
+            addDirectoryItem(
                 HANDLE,
                 url=url,
                 listitem=list_item,
@@ -153,22 +152,24 @@ def get_episode_list(show_id):  # pylint: disable=missing-docstring
 
 
 def get_episode_details(encoded_ids):  # pylint: disable=missing-docstring
-    import web_pdb; web_pdb.set_trace()
+    
     # type: (Text) -> None
-    encoded_ids = urllib.parse.unquote(encoded_ids)
-    decoded_ids = dict(urllib.parse.parse_qsl(encoded_ids))
+    
+
+    encoded_ids = unquote(encoded_ids)
+    decoded_ids = dict(parse_qsl(encoded_ids))
     logger.debug('Getting episode details for {}'.format(decoded_ids))
     episode_info = tmdb.load_episode_info(
         decoded_ids['show_id'], decoded_ids['episode_id']
     )
     if episode_info:
-        list_item = xbmcgui.ListItem(episode_info['name'], offscreen=True)
+        list_item = ListItem(episode_info['name'], offscreen=True)
         list_item = data_utils.add_episode_info(list_item, episode_info, full_info=True)
-        import web_pdb; web_pdb.set_trace()
-        xbmcplugin.setResolvedUrl(HANDLE, True, list_item)
+        
+        setResolvedUrl(HANDLE, True, list_item)
     else:
-        xbmcplugin.setResolvedUrl(
-            HANDLE, False, xbmcgui.ListItem(offscreen=True))
+        setResolvedUrl(
+            HANDLE, False, ListItem(offscreen=True))
 
 
 def get_artwork(show_id):
@@ -183,12 +184,12 @@ def get_artwork(show_id):
     logger.debug('Getting artwork for show ID {}'.format(show_id))
     show_info = tmdb.load_show_info(show_id)
     if show_info is not None:
-        list_item = xbmcgui.ListItem(show_info['name'], offscreen=True)
+        list_item = ListItem(show_info['name'], offscreen=True)
         list_item = data_utils.set_show_artwork(show_info, list_item)
-        xbmcplugin.setResolvedUrl(HANDLE, True, list_item)
+        setResolvedUrl(HANDLE, True, list_item)
     else:
-        xbmcplugin.setResolvedUrl(
-            HANDLE, False, xbmcgui.ListItem(offscreen=True))
+        setResolvedUrl(
+            HANDLE, False, ListItem(offscreen=True))
 
 
 def router(paramstring):
@@ -199,8 +200,8 @@ def router(paramstring):
     :param paramstring: url-encoded query string
     :raises RuntimeError: on unknown call action
     """
-    params = dict(urllib.parse.parse_qsl(paramstring))
-    logger.debug('Called addon with params: {}'.format(sys.argv))
+    params = dict(parse_qsl(paramstring))
+    logger.debug('Called addon with params: {}'.format(argv))
     if params['action'] == 'find':
         logger.debug('performing find action')
         find_show(params['title'], params.get('year'))
@@ -220,5 +221,5 @@ def router(paramstring):
         logger.debug('performing getartwork action')
         get_artwork(params.get('id'))
     else:
-        raise RuntimeError('Invalid addon call: {}'.format(sys.argv))
-    xbmcplugin.endOfDirectory(HANDLE)
+        raise RuntimeError('Invalid addon call: {}'.format(argv))
+    endOfDirectory(HANDLE)

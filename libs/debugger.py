@@ -22,22 +22,13 @@
 Provides a context manager that writes extended debugging info
 in the Kodi log on unhandled exceptions
 """
-from __future__ import absolute_import, unicode_literals
 
-import inspect
+from inspect import trace
 from contextlib import contextmanager
 from platform import uname
 from pprint import pformat
-
-import xbmc
-
+from xbmc import getInfoLabel
 from .utils import logger
-
-try:
-    from typing import Text, Generator, Callable, Dict, Any  # pylint: disable=unused-import
-except ImportError:
-    pass
-
 
 def _format_vars(variables):
     # type: (Dict[Text, Any]) -> Text
@@ -89,15 +80,15 @@ def debug_exception(logger_func=logger.error):
     try:
         yield
     except Exception as exc:
-        frame_info = inspect.trace(5)[-1]
+        frame_info = trace(5)[-1]
         logger_func(
             '*** Unhandled exception detected: {} {} ***'.format(type(exc), exc))
         logger_func('*** Start diagnostic info ***')
         logger_func('System info: {0}'.format(uname()))
         logger_func('OS info: {0}'.format(
-            xbmc.getInfoLabel('System.OSVersionInfo')))
+            getInfoLabel('System.OSVersionInfo')))
         logger_func('Kodi version: {0}'.format(
-            xbmc.getInfoLabel('System.BuildVersion')))
+            getInfoLabel('System.BuildVersion')))
         logger_func('File: {0}'.format(frame_info[1]))
         context = ''
         if frame_info[4] is not None:

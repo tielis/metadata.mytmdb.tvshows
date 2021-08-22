@@ -18,18 +18,12 @@
 
 """Functions to interact with TMDb API"""
 
-from __future__ import absolute_import, unicode_literals
-
-import unicodedata
+from unicodedata import normalize
 from math import floor
 from pprint import pformat
 from . import cache, data_utils, api_utils, settings, imdbratings, traktratings
 from .utils import logger
-try:
-    from typing import Text, Optional, Union, List, Dict, Any  # pylint: disable=unused-import
-    InfoType = Dict[Text, Any]  # pylint: disable=invalid-name
-except ImportError:
-    pass
+from datetime import datetime
 
 HEADERS = (
     ('User-Agent', 'Kodi TV Show scraper by Team Kodi; contact pkscout@kodi.tv'),
@@ -74,7 +68,7 @@ def search_show(title, year=None):
     else:
         logger.debug('using title of %s to find show' % title)
         search_url = SEARCH_URL
-        params['query'] = unicodedata.normalize('NFKC', title)
+        params['query'] = normalize('NFKC', title)
         if year:
             params['first_air_date_year'] = str(year)
     resp = api_utils.load_info(
@@ -119,6 +113,8 @@ def load_episode_list(show_info, season_map, ep_grouping):
                     episode['org_epnum'] = episode['episode_number']
                     episode['season_number'] = custom_season['order']
                     episode['episode_number'] = episode['order'] + 1
+                    episode['external_ids'] = season['episode/' + str(episode['episode_number']) + '/external_ids']
+                    episode['images'] = season['episode/' + str(episode['episode_number']) + '/images']
                     season_episodes.append(episode)
                     episode_list.append(episode)
                 current_season['episodes'] = season_episodes
@@ -132,13 +128,28 @@ def load_episode_list(show_info, season_map, ep_grouping):
             for episode in season.get('episodes', []):
                 episode['org_seasonnum'] = episode['season_number']
                 episode['org_epnum'] = episode['episode_number']
+                episode['external_ids'] = season['episode/' + str(episode['episode_number']) + '/external_ids']
+                episode['images'] = season['episode/' + str(episode['episode_number']) + '/images']
                 episode_list.append(episode)    
-    show_info['episodes'] = episode_list    
+    show_info['episodes'] = episode_list       
     return show_info
 
 
-def load_show_info(show_id, ep_grouping=None, named_seasons=None):
-    import web_pdb; web_pdb.set_trace()
+def clean_info (show_info):
+    del show_info["credits"]["crew"]
+    for season in show_info['seasons']:
+        del show_info['season/'+ str(season['season_number'])]           
+        for episode in season['episodes']:                
+            del season["episode/" + str(episode["episode_number"]) + "/external_ids"]
+            del season["episode/" + str(episode["episode_number"]) + "/images"]
+        del season['episodes']
+    for episode in show_info['episodes']:
+        del episode["crew"]
+    return show_info 
+
+
+def load_show_info(show_id, ep_grouping=None, named_seasons=None):    
+    
     # type: (Text) -> Optional[InfoType]
     """
     Get full info for a single show
@@ -146,17 +157,37 @@ def load_show_info(show_id, ep_grouping=None, named_seasons=None):
     :param show_id: themoviedb.org show ID
     :return: show info or None
     """
+    
     if named_seasons == None:
         named_seasons = []
     show_info = cache.load_show_info_from_cache(show_id)
-    if show_info is None:
+    difference = 1201    
+    try:  
+        difference = (datetime.now() - datetime.fromisoformat(show_info['#scraper_update'])).total_seconds()
+    except:
+        None
+    if difference > 1200:
+
+        show_info = {}
+
         logger.debug('no cache file found, loading from scratch')
         show_url = SHOW_URL.format(show_id)
         params = TMDB_PARAMS.copy()
-        params['append_to_response'] = 'credits,content_ratings,external_ids,images,videos'
+        params['append_to_response'] = 'credits,content_ratings,external_ids,images,videos,'
         params['include_image_language'] = '%s,en,null' % settings.LANG[0:2]
-        show_info = api_utils.load_info(
-            show_url, params=params, verboselog=settings.VERBOSELOG)
+        season_append = False
+        i=0
+        while not season_append:
+            while params['append_to_response'].count(',') < 19:
+                params['append_to_response'] = (params['append_to_response'] +
+                                               "season/" + str(i) + ",")
+                i += 1
+            show_info.update(api_utils.load_info(
+                show_url, params=params, verboselog=settings.VERBOSELOG))
+            params['append_to_response'] = ''
+            if show_info['seasons'][len(show_info['seasons']) - 1]["season_number"] <= (i-1):
+                season_append = True
+        
         if show_info is None:
             return None
         if show_info['overview'] == '' and settings.LANG != 'en-US':
@@ -167,13 +198,27 @@ def load_show_info(show_id, ep_grouping=None, named_seasons=None):
             if show_info_backup is not None:
                 show_info['overview'] = show_info_backup.get('overview', '')
             params['language'] = settings.LANG
-        season_map = {}
-        params['append_to_response'] = 'credits,images'
-        for season in show_info.get('seasons', []):
+
+        season_map = {}        
+        for season in show_info['seasons']:  
+            if season["episode_count"] == 0:
+                continue
+            season_info = {}
             season_url = SEASON_URL.format(
                 show_id, season.get('season_number', 0))
-            season_info = api_utils.load_info(
-                season_url, params=params, default={}, verboselog=settings.VERBOSELOG)
+            params['append_to_response'] = 'credits,images,'  
+            
+            episodes = show_info['season/'+ str(season['season_number'])]["episodes"]
+            for i, episode in enumerate(episodes):                
+                params['append_to_response'] = (params['append_to_response'] +
+                                                    "episode/" + str(episode["episode_number"]) + "/external_ids," +
+                                                    "episode/" + str(episode["episode_number"]) + "/images,")
+                if params['append_to_response'].count(',')==20 or i==(len(episodes)-1):
+                        season_info.update(api_utils.load_info(
+                            season_url, params=params, default={}, verboselog=settings.VERBOSELOG))
+                        params['append_to_response'] = ''
+                              
+            
             if (season_info.get('overview', '') == '' or season_info.get('name', '').lower().startswith('season')) and settings.LANG != 'en-US':
                 params['language'] = 'en-US'
                 season_info_backup = api_utils.load_info(
@@ -194,7 +239,8 @@ def load_show_info(show_id, ep_grouping=None, named_seasons=None):
             # end work around
             season_info['images'] = _sort_image_types(
                 season_info.get('images', {}))
-            season_map[str(season.get('season_number', 0))] = season_info
+            season_map[str(season.get('season_number', 0))] = season_info 
+        
         show_info = load_episode_list(show_info, season_map, ep_grouping)
         show_info['ratings'] = load_ratings(show_info)
         show_info = load_fanarttv_art(show_info)
@@ -208,7 +254,9 @@ def load_show_info(show_id, ep_grouping=None, named_seasons=None):
                     cast.append(cast_member)
                     cast_check.append(cast_member.get('name', ''))
         show_info['credits']['cast'] = cast
+        show_info['#scraper_update'] = datetime.now().isoformat()
         logger.debug('saving show info to the cache')
+        Show_info = clean_info(show_info)
         if settings.VERBOSELOG:
             logger.debug(format(pformat(show_info)))
         cache.cache_show_info(show_info)
@@ -230,19 +278,18 @@ def load_episode_info(show_id, episode_id):
     show_info = load_show_info(show_id)
     if show_info is not None:
         try:
-            episode_info = show_info['episodes'][int(episode_id)]
+            ep_return = show_info['episodes'][int(episode_id)]
         except KeyError:
             return None
         # this ensures we are using the season/ep from the episode grouping if provided
-        ep_url = EPISODE_URL.format(
-            show_info['id'], episode_info['org_seasonnum'], episode_info['org_epnum'])
-        params = TMDB_PARAMS.copy()
-        params['append_to_response'] = 'credits,external_ids,images'
-        params['include_image_language'] = '%s,en,null' % settings.LANG[0:2]
-        import web_pdb; web_pdb.set_trace()
-        ep_return = api_utils.load_info(ep_url, params=params, verboselog=settings.VERBOSELOG)
-        if ep_return is None:
-            return None
+        #ep_url = EPISODE_URL.format(
+        #    show_info['id'], episode_info['org_seasonnum'], episode_info['org_epnum'])
+        #params = TMDB_PARAMS.copy()
+        #params['append_to_response'] = 'credits,external_ids,images'
+        #params['include_image_language'] = '%s,en,null' % settings.LANG[0:2]        
+        #ep_return = api_utils.load_info(ep_url, params=params, verboselog=settings.VERBOSELOG)
+        #if ep_return is None:
+        #    return None
         bad_return_name = False
         bad_return_overview = False
         check_name = ep_return.get('name')
@@ -267,14 +314,14 @@ def load_episode_info(show_id, episode_id):
                     ep_return['name'] = ep_return_backup.get(
                         'name', 'Episode ' + str(episode_info['episode_number']))
         ep_return['images'] = _sort_image_types(ep_return.get('images', {}))
-        ep_return['season_number'] = episode_info['season_number']
-        ep_return['episode_number'] = episode_info['episode_number']
-        ep_return['org_seasonnum'] = episode_info['org_seasonnum']
-        ep_return['org_epnum'] = episode_info['org_epnum']
+        #ep_return['season_number'] = episode_info['season_number']
+        #ep_return['episode_number'] = episode_info['episode_number']
+        #ep_return['org_seasonnum'] = episode_info['org_seasonnum']
+        #ep_return['org_epnum'] = episode_info['org_epnum']
         ep_return['ratings'] = load_ratings(
             ep_return, show_imdb_id=show_info.get('external_ids', {}).get('imdb_id'))
         show_info['episodes'][int(episode_id)] = ep_return
-        cache.cache_show_info(show_info)
+        #cache.cache_show_info(show_info)
         return ep_return
     return None
 
@@ -331,18 +378,18 @@ def load_fanarttv_art(show_info):
                 filepath = ''
                 if lang is None or lang == settings.LANG[0:2] or lang == 'en':
                     filepath = item.get('url')
-                if filepath:
-                    if tmdb_type.startswith('season'):
-                        image_type = tmdb_type[6:]
-                        for s in range(len(show_info.get('seasons', []))):
-                            season_num = show_info['seasons'][s]['season_number']
+                if filepath:                       
+                    if tmdb_type.startswith('season'):                         
+                        image_type = tmdb_type[6:]                        
+                        for s in show_info['seasons']:                            
+                            season_num = s['season_number']
                             artseason = item.get('season', '')
-                            if not show_info['seasons'][s].get('images'):
-                                show_info['seasons'][s]['images'] = {}
-                            if not show_info['seasons'][s]['images'].get(image_type):
-                                show_info['seasons'][s]['images'][image_type] = []
+                            if not s.get('images'):
+                                s['images'] = {}                            
+                            if not s['images'].get(image_type):                                
+                                s['images'][image_type] = []
                             if artseason == '' or artseason == str(season_num):
-                                show_info['seasons'][s]['images'][image_type].append(
+                                s['images'][image_type].append(
                                     {'file_path': filepath, 'type': 'fanarttv', 'iso_639_1': lang})
                     else:
                         show_info['images'][tmdb_type].append(
@@ -440,3 +487,6 @@ def _image_sort(images, image_type):
         return lang_pref + lang_en + lang_null
     else:
         return lang_pref + lang_null + lang_en
+
+    
+           
