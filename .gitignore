@@ -129,8 +129,16 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+<<<<<<< HEAD
 /.vs/ProjectSettings.json
 /.vs/PythonSettings.json
 /.vs/metadata.tvshows.themoviedb.org.python/v16/.suo
 /.vs/VSWorkspaceState.json
 /.vs/slnx.sqlite
+=======
+/.vs/VSWorkspaceState.json
+/.vs/slnx.sqlite
+/.vs/PythonSettings.json
+/.vs/ProjectSettings.json
+/.vs/metadata.tvshows.themoviedb.org.python/v16/.suo
+>>>>>>> gitignore
