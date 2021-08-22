@@ -29,4 +29,6 @@ from libs.debugger import debug_exception
 
 if __name__ == '__main__':
     with debug_exception():
+        import web_pdb; web_pdb.set_trace()
         router(sys.argv[2][1:])
+        

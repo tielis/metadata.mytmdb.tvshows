@@ -124,12 +124,13 @@ def load_episode_list(show_info, season_map, ep_grouping):
             for episode in season.get('episodes', []):
                 episode['org_seasonnum'] = episode['season_number']
                 episode['org_epnum'] = episode['episode_number']
-                episode_list.append(episode)
-    show_info['episodes'] = episode_list
+                episode_list.append(episode)    
+    show_info['episodes'] = episode_list    
     return show_info
 
 
 def load_show_info(show_id, ep_grouping=None, named_seasons=None):
+    import web_pdb; web_pdb.set_trace()
     # type: (Text) -> Optional[InfoType]
     """
     Get full info for a single show
@@ -138,64 +139,69 @@ def load_show_info(show_id, ep_grouping=None, named_seasons=None):
     :return: show info or None
     """
     if named_seasons == None:
-        named_seasons = []        
-    show_url = SHOW_URL.format(show_id)
-    params = TMDB_PARAMS.copy()
-    params['append_to_response'] = 'credits,content_ratings,external_ids,images,videos'
-    params['include_image_language'] = '%s,en,null' % settings.LANG[0:2]
-    show_info = api_utils.load_info(show_url, params=params, verboselog=settings.VERBOSELOG)
-    if show_info is None:
-        return None
-    if show_info['overview'] == '' and settings.LANG != 'en-US':
-        params['language'] = 'en-US'
-        del params['append_to_response']
-        show_info_backup = api_utils.load_info(show_url, params=params, verboselog=settings.VERBOSELOG)
-        if show_info_backup is not None:
-            show_info['overview'] = show_info_backup.get('overview', '')
-        params['language'] = settings.LANG
-    season_map = {}
-    params['append_to_response'] = 'credits,images'
-    for season in show_info.get('seasons', []):
-        season_url = SEASON_URL.format(show_id, season['season_number'])
-        season_info = api_utils.load_info(season_url, params=params, default={}, verboselog=settings.VERBOSELOG)
-        if (season_info['overview'] == '' or season_info['name'].lower().startswith('season')) and settings.LANG != 'en-US':
+        named_seasons = []
+    show_info = cache.load_show_info_from_cache(show_id)
+    if show_info is None:   
+        
+        show_url = SHOW_URL.format(show_id)
+        params = TMDB_PARAMS.copy()
+        params['append_to_response'] = 'credits,content_ratings,external_ids,images,videos'
+        params['include_image_language'] = '%s,en,null' % settings.LANG[0:2]
+        show_info = api_utils.load_info(show_url, params=params, verboselog=settings.VERBOSELOG)
+        if show_info is None:
+            return None
+        if show_info['overview'] == '' and settings.LANG != 'en-US':
             params['language'] = 'en-US'
-            season_info_backup = api_utils.load_info(season_url, params=params, default={}, verboselog=settings.VERBOSELOG)
+            del params['append_to_response']
+            show_info_backup = api_utils.load_info(show_url, params=params, verboselog=settings.VERBOSELOG)
+            if show_info_backup is not None:
+                show_info['overview'] = show_info_backup.get('overview', '')
             params['language'] = settings.LANG
-            if season_info['overview'] == '':
-                season_info['overview'] = season_info_backup['overview']
-            if season_info['name'].lower().startswith('season'):
-                season_info['name'] = season_info_backup['name']
-        # this is part of a work around for xbmcgui.ListItem.addSeasons() not respecting NFO file information
-        for named_season in named_seasons:
-            if str(named_season[0]) == str(season['season_number']):
-                logger.debug('adding season name of %s from named seasons in NFO for season %s' % (named_season[1], season['season_number']))
-                season_info['name'] = named_season[1]
-                break
-        # end work around
-        season_info['images'] = _sort_image_types(season_info.get('images', {}))
-        season_map[str(season['season_number'])] = season_info
-    show_info = load_episode_list(show_info, season_map, ep_grouping)
-    show_info['ratings'] = load_ratings(show_info)
-    show_info = load_fanarttv_art(show_info)
-    show_info['images'] = _sort_image_types(show_info.get('images', {}))
-    show_info = trim_artwork(show_info)
-    cast_check = []
-    cast = []
-    for season in reversed(show_info.get('seasons', [])):
-        for cast_member in season.get('credits', {}).get('cast', []):
-            if cast_member['name'] not in cast_check:
-                cast.append(cast_member)
-                cast_check.append(cast_member['name'])
-    show_info['credits']['cast'] = cast
-    logger.debug('saving show info to the cache')
+        season_map = {}
+        params['append_to_response'] = 'credits,images'
+        for season in show_info.get('seasons', []):
+            season_url = SEASON_URL.format(show_id, season['season_number'])            
+            season_info = api_utils.load_info(season_url, params=params, default={}, verboselog=settings.VERBOSELOG)
+            if (season_info['overview'] == '' or season_info['name'].lower().startswith('season')) and settings.LANG != 'en-US':
+                params['language'] = 'en-US'
+                season_info_backup = api_utils.load_info(season_url, params=params, default={}, verboselog=settings.VERBOSELOG)
+                params['language'] = settings.LANG
+                if season_info['overview'] == '':
+                    season_info['overview'] = season_info_backup['overview']
+                if season_info['name'].lower().startswith('season'):
+                    season_info['name'] = season_info_backup['name']
+            # this is part of a work around for xbmcgui.ListItem.addSeasons() not respecting NFO file information
+            for named_season in named_seasons:
+                if str(named_season[0]) == str(season['season_number']):
+                    logger.debug('adding season name of %s from named seasons in NFO for season %s' % (named_season[1], season['season_number']))
+                    season_info['name'] = named_season[1]
+                    break
+            # end work around
+            season_info['images'] = _sort_image_types(season_info.get('images', {}))
+            season_map[str(season['season_number'])] = season_info
+        show_info = load_episode_list(show_info, season_map, ep_grouping)        
+        show_info['ratings'] = load_ratings(show_info)
+        show_info = load_fanarttv_art(show_info)
+        show_info['images'] = _sort_image_types(show_info.get('images', {}))
+        show_info = trim_artwork(show_info)
+        cast_check = []
+        cast = []
+        for season in reversed(show_info.get('seasons', [])):
+            for cast_member in season.get('credits', {}).get('cast', []):
+                if cast_member['name'] not in cast_check:
+                    cast.append(cast_member)
+                    cast_check.append(cast_member['name'])
+        show_info['credits']['cast'] = cast
+        logger.debug('saving show info to the cache')
     if settings.VERBOSELOG:
         logger.debug(format(pformat(show_info)))
+    
     cache.cache_show_info(show_info)
     return show_info
 
 
 def load_episode_info(show_id, episode_id):
+    
     # type: (Text, Text) -> Optional[InfoType]
     """
     Load episode info
@@ -215,6 +221,7 @@ def load_episode_info(show_id, episode_id):
         params = TMDB_PARAMS.copy()
         params['append_to_response'] = 'credits,external_ids,images'
         params['include_image_language'] = '%s,en,null' % settings.LANG[0:2]
+        import web_pdb; web_pdb.set_trace()
         ep_return = api_utils.load_info(ep_url, params=params, verboselog=settings.VERBOSELOG)
         if ep_return is None:
             return None

@@ -94,6 +94,10 @@ def get_details(show_id):
     """Get details about a specific show"""
     logger.debug('Getting details for show id {}'.format(show_id))
     show_info = tmdb.load_show_info(show_id)
+    f = open("d:\Show_info.txt", "a", encoding='utf-8')
+    f.write(str(show_info))
+    f.close()  
+    
     if show_info is not None:
         list_item = xbmcgui.ListItem(show_info['name'], offscreen=True)
         list_item = data_utils.add_main_show_info(list_item, show_info, full_info=True)
@@ -103,6 +107,7 @@ def get_details(show_id):
 
 
 def get_episode_list(show_id):  # pylint: disable=missing-docstring
+    import web_pdb; web_pdb.set_trace()
     # type: (Text) -> None
     logger.debug('Getting episode list for show id {}'.format(show_id))
     if not show_id.isdigit():
@@ -140,6 +145,7 @@ def get_episode_list(show_id):  # pylint: disable=missing-docstring
 
 
 def get_episode_details(encoded_ids):  # pylint: disable=missing-docstring
+    import web_pdb; web_pdb.set_trace()
     # type: (Text) -> None
     encoded_ids = urllib.parse.unquote(encoded_ids)
     decoded_ids = dict(urllib.parse.parse_qsl(encoded_ids))
@@ -150,6 +156,7 @@ def get_episode_details(encoded_ids):  # pylint: disable=missing-docstring
     if episode_info:
         list_item = xbmcgui.ListItem(episode_info['name'], offscreen=True)
         list_item = data_utils.add_episode_info(list_item, episode_info, full_info=True)
+        import web_pdb; web_pdb.set_trace()
         xbmcplugin.setResolvedUrl(HANDLE, True, list_item)
     else:
         xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem(offscreen=True))
