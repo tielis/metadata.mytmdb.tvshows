@@ -154,7 +154,7 @@ def _set_rating(the_info, list_item, episode=False):
     return list_item
 
 
-def _add_season_info(show_info, list_item):
+def _add_season_info(show_info, list_item):    
     # type: (InfoType, ListItem) -> ListItem
     """Add info for show seasons"""
     for season in show_info['seasons']:
@@ -306,7 +306,7 @@ def add_main_show_info(list_item, show_info, full_info=True):
     return list_item
 
 
-def add_episode_info(list_item, episode_info, full_info=True):
+def add_episode_info(list_item, episode_info, full_info=True): 
     # type: (ListItem, InfoType, bool) -> ListItem
     """Add episode info to a list item"""
     video = {
@@ -322,9 +322,9 @@ def add_episode_info(list_item, episode_info, full_info=True):
         if summary is not None:
             video['plot'] = video['plotoutline'] = _clean_plot(summary)
         if safe_get(episode_info, 'air_date') is not None:
-            video['premiered'] = episode_info['air_date']
+            video['premiered'] = episode_info['air_date']        
         list_item = _set_cast(
-            episode_info['credits']['guest_stars'], list_item)
+            episode_info['guest_stars'], list_item)
         ext_ids = {'tmdb_id': episode_info['id']}
         ext_ids.update(episode_info.get('external_ids', {}))
         list_item = _set_unique_ids(ext_ids, list_item)

@@ -51,6 +51,7 @@ def load_info(url, params=None, default=None, resp_type='json', verboselog=False
     """
     if params:
         url = url + '?' + urlencode(params)
+    
     logger.debug('Calling URL "{}"'.format(url))
     req = Request(url, headers=HEADERS)
     try:
