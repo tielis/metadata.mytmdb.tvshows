@@ -72,9 +72,14 @@ def load_show_info_from_cache(show_id):
     file_name = str(show_id) + '.pickle'
     try:
         with open(os.path.join(CACHE_DIR, file_name), 'rb') as fo:
+            
             load_kwargs = {}
             load_kwargs['encoding'] = 'bytes'
             cache = pickle.load(fo, **load_kwargs)
+            #f = open("d:\Show_info.txt", "a", encoding='utf-8')
+            #f.write(str(cache))
+            #f.close()  
+            #import web_pdb; web_pdb.set_trace()
         return cache['show_info']
     except (IOError, pickle.PickleError) as exc:
         logger.debug('Cache message: {} {}'.format(type(exc), exc))
