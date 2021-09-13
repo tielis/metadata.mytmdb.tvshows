@@ -28,7 +28,6 @@ import xbmcgui
 import xbmcplugin
 from . import tmdb, data_utils
 from .utils import logger, safe_get
-from datetime import datetime
 try:
     from typing import Optional, Text, Union, ByteString  # pylint: disable=unused-import
 except ImportError:
@@ -161,6 +160,8 @@ def get_episode_list(show_id):  # pylint: disable=missing-docstring
 def get_episode_details(encoded_ids):  # pylint: disable=missing-docstring
     
     # type: (Text) -> None
+    
+
     encoded_ids = urllib.parse.unquote(encoded_ids)
     decoded_ids = dict(urllib.parse.parse_qsl(encoded_ids))
     logger.debug('Getting episode details for {}'.format(decoded_ids))
@@ -173,9 +174,6 @@ def get_episode_details(encoded_ids):  # pylint: disable=missing-docstring
         
         xbmcplugin.setResolvedUrl(HANDLE, True, list_item)
 
-        #f = open('D:\\show_req.txt', "a")
-        #f.write(str(datetime.now()) + '   -  end \n')
-        #f.close()
     else:
         xbmcplugin.setResolvedUrl(
             HANDLE, False, xbmcgui.ListItem(offscreen=True))

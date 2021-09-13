@@ -142,6 +142,19 @@ def load_episode_list(show_info, season_map, ep_grouping):
     return show_info
 
 
+def clean_info (show_info):
+    del show_info["credits"]["crew"]
+    for season in show_info['seasons']:
+        del show_info['season/'+ str(season['season_number'])]           
+        for episode in season['episodes']:                
+            del season["episode/" + str(episode["episode_number"]) + "/external_ids"]
+            del season["episode/" + str(episode["episode_number"]) + "/images"]
+        del season['episodes']
+    for episode in show_info['episodes']:
+        del episode["crew"]
+    return show_info 
+
+
 def load_show_info(show_id, ep_grouping=None, named_seasons=None):    
     
     # type: (Text) -> Optional[InfoType]
@@ -158,11 +171,13 @@ def load_show_info(show_id, ep_grouping=None, named_seasons=None):
     #import web_pdb; web_pdb.set_trace()
     difference = 1201    
     try:  
-        difference = (datetime.now() - show_info['#scraper_update']).total_seconds()        
+        difference = (datetime.now() - datetime.fromisoformat(show_info['#scraper_update'])).total_seconds()
     except:
         None
     if difference > 1200:
+
         show_info = {}
+
         logger.debug('no cache file found, loading from scratch')
         show_url = SHOW_URL.format(show_id)
         params = TMDB_PARAMS.copy()
@@ -245,15 +260,16 @@ def load_show_info(show_id, ep_grouping=None, named_seasons=None):
             for cast_member in season.get('credits', {}).get('cast', []):
                 if cast_member.get('name', '') not in cast_check:
                     cast.append(cast_member)
-                    cast_check.append(cast_member.get('name', ''))        
+                    cast_check.append(cast_member.get('name', ''))
         show_info['credits']['cast'] = cast
-        show_info['#scraper_update'] = datetime.now()
+        show_info['#scraper_update'] = datetime.now().isoformat()
         logger.debug('saving show info to the cache')
+        Show_info = clean_info(show_info)
         if settings.VERBOSELOG:
-            logger.debug(format(pformat(show_info)))                      
+            logger.debug(format(pformat(show_info)))
         cache.cache_show_info(show_info)
     else:
-        logger.debug('using cached show info')    
+        logger.debug('using cached show info')
     return show_info
 
 
@@ -479,3 +495,6 @@ def _image_sort(images, image_type):
         return lang_pref + lang_en + lang_null
     else:
         return lang_pref + lang_null + lang_en
+
+    
+           
