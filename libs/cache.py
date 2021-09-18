@@ -20,26 +20,20 @@
 
 """Cache-related functionality"""
 
-from __future__ import absolute_import, unicode_literals
 
-import os, pickle
-import xbmc, xbmcvfs
 
+from os import path
+from pickle import dump, load, PickleError
+from xbmcvfs import translatePath, exists, mkdir
 from .utils import ADDON, logger
-
-try:
-    from typing import Optional, Text, Dict, Any  # pylint: disable=unused-import
-except ImportError:
-    pass
-
 
 
 def _get_cache_directory():  # pylint: disable=missing-docstring
     # type: () -> Text
-    temp_dir = xbmcvfs.translatePath('special://temp')
-    cache_dir = os.path.join(temp_dir, 'scrapers', ADDON.getAddonInfo('id'))
-    if not xbmcvfs.exists(cache_dir):
-        xbmcvfs.mkdir(cache_dir)
+    temp_dir = translatePath('special://temp')
+    cache_dir = path.join(temp_dir, 'scrapers', ADDON.getAddonInfo('id'))
+    if not exists(cache_dir):
+        mkdir(cache_dir)
     logger.debug('the cache dir is ' + cache_dir)
     return cache_dir
 
@@ -56,8 +50,8 @@ def cache_show_info(show_info):
     cache = {
         'show_info': show_info
     }
-    with open(os.path.join(CACHE_DIR, file_name), 'wb') as fo:
-        pickle.dump(cache, fo, protocol=2)
+    with open(path.join(CACHE_DIR, file_name), 'wb') as fo:
+        dump(cache, fo, protocol=2)
 
 
 def load_show_info_from_cache(show_id):
@@ -70,11 +64,11 @@ def load_show_info_from_cache(show_id):
     """
     file_name = str(show_id) + '.pickle'
     try:
-        with open(os.path.join(CACHE_DIR, file_name), 'rb') as fo:
+        with open(path.join(CACHE_DIR, file_name), 'rb') as fo:
             load_kwargs = {}
             load_kwargs['encoding'] = 'bytes'
-            cache = pickle.load(fo, **load_kwargs)
+            cache = load(fo, **load_kwargs)
         return cache['show_info']
-    except (IOError, pickle.PickleError) as exc:
+    except (IOError, PickleError) as exc:
         logger.debug('Cache message: {} {}'.format(type(exc), exc))
         return None

@@ -5,8 +5,7 @@
   provider-name="Team Kodi">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
-    <import addon="xbmc.metadata" version="2.1.0"/>
-    <import addon="script.module.web-pdb" version="1.5.6"/>
+    <import addon="xbmc.metadata" version="2.1.0"/>    
   </requires>
   <extension point="xbmc.metadata.scraper.tvshows" library="main.py" cachepersistence="00:15"/>
   <extension point="xbmc.addon.metadata">

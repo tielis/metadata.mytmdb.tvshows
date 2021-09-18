@@ -18,16 +18,11 @@
 
 """Misc utils"""
 
-from __future__ import absolute_import, unicode_literals
-
-import xbmc, unicodedata
+from xbmc import LOGDEBUG, log, LOGINFO, LOGERROR, LOGDEBUG, translatePath
+from unicodedata import normalize
 from os import path
 from xbmcaddon import Addon
 
-try:
-    from typing import Text, Optional, Any, Dict  # pylint: disable=unused-import
-except ImportError:
-    pass
 
 ADDON_ID = 'metadata.tvshows.themoviedb.org.python'
 ADDON = Addon()
@@ -38,27 +33,27 @@ class logger:
         ADDON_ID, ADDON.getAddonInfo('version'))
 
     @staticmethod
-    def log(message, level=xbmc.LOGDEBUG):
+    def log(message, level=LOGDEBUG):
         # type: (Text, int) -> None
         if isinstance(message, bytes):
             message = message.decode('utf-8')
         message = logger.log_message_prefix + message
-        xbmc.log(message, level)
+        log(message, level)
 
     @staticmethod
     def info(message):
         # type: (Text) -> None
-        logger.log(message, xbmc.LOGINFO)
+        logger.log(message, LOGINFO)
 
     @staticmethod
     def error(message):
         # type: (Text) -> None
-        logger.log(message, xbmc.LOGERROR)
+        logger.log(message, LOGERROR)
 
     @staticmethod
     def debug(message):
         # type: (Text) -> None
-        logger.log(message, xbmc.LOGDEBUG)
+        logger.log(message, LOGDEBUG)
 
 
 def safe_get(dct, key, default=None):
@@ -74,12 +69,12 @@ def safe_get(dct, key, default=None):
 
 def trailer_log(key, msg, title):
    
-    addonDataDir = xbmc.translatePath(Addon(ADDON_ID).getAddonInfo('profile'))
+    addonDataDir = translatePath(Addon(ADDON_ID).getAddonInfo('profile'))
     Logtxt = path.join(addonDataDir, "Trailer_log.txt")
 
     lines =  []
     found = False
-    title = unicodedata.normalize('NFC',str(title))
+    title = normalize('NFC',str(title))
     txt_msg = key + msg + title + '\n'
     try:
         makedirs(addonDataDir)

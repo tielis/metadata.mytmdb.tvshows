@@ -20,25 +20,16 @@
 
 """Functions to process data"""
 
-from __future__ import absolute_import, unicode_literals
-
-import re
-import json
+from re import compile, findall, search, I
 from collections import OrderedDict, namedtuple
 from .utils import safe_get, logger, trailer_log
 from . import settings, api_utils
 
-try:
-    from typing import Optional, Text, Dict, List, Any  # pylint: disable=unused-import
-    from xbmcgui import ListItem  # pylint: disable=unused-import
-    InfoType = Dict[Text, Any]  # pylint: disable=invalid-name
-except ImportError:
-    pass
 
 TMDB_PARAMS = {'api_key': settings.TMDB_CLOWNCAR, 'language': settings.LANG}
 BASE_URL = 'https://api.themoviedb.org/3/{}'
 FIND_URL = BASE_URL.format('find/{}')
-TAG_RE = re.compile(r'<[^>]+>')
+TAG_RE = compile(r'<[^>]+>')
 
 # Regular expressions are listed in order of priority.
 # "TMDB" provider is preferred than other providers (IMDB and TheTVDB),
@@ -349,13 +340,13 @@ def parse_nfo_url(nfo):
     """Extract show ID and named seasons from NFO file contents"""
     # work around for xbmcgui.ListItem.addSeason overwriting named seasons from NFO files
     ns_regex = r'<namedseason number="(.*)">(.*)</namedseason>'
-    ns_match = re.findall(ns_regex, nfo, re.I)
+    ns_match = findall(ns_regex, nfo, I)
     sid_match = None
     ep_grouping = None
     for regexp in SHOW_ID_REGEXPS:
         logger.debug('trying regex to match service from parsing nfo:')
         logger.debug(regexp)
-        show_id_match = re.search(regexp, nfo, re.I)
+        show_id_match = search(regexp, nfo, I)
         if show_id_match:
             logger.debug('match group 1: ' + show_id_match.group(1))
             logger.debug('match group 2: ' + show_id_match.group(2))

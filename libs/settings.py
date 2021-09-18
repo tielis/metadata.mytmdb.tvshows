@@ -16,9 +16,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 # pylint: disable=missing-docstring
 
-import json
-import sys
-import urllib.parse
+from json import loads
+from sys import argv
+from urllib.parse import parse_qsl
 from .utils import logger
 from . import api_utils
 from xbmcaddon import Addon
@@ -71,10 +71,10 @@ FANARTTV_MAPPING = {'showbackground': 'backdrops',
                     }
 
 try:
-    source_params = dict(urllib.parse.parse_qsl(sys.argv[2]))
+    source_params = dict(parse_qsl(argv[2]))
 except IndexError:
     source_params = {}
-source_settings = json.loads(source_params.get('pathSettings', '{}'))
+source_settings = loads(source_params.get('pathSettings', '{}'))
 
 KEEPTITLE = source_settings.get(
     'keeporiginaltitle', ADDON.getSettingBool('keeporiginaltitle'))

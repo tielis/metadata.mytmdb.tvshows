@@ -18,15 +18,8 @@
 
 """Functions to interact with Trakt API"""
 
-from __future__ import absolute_import, unicode_literals
-
 from . import api_utils, settings
 from .utils import logger
-try:
-    from typing import Text, Optional, Union, List, Dict, Any  # pylint: disable=unused-import
-    InfoType = Dict[Text, Any]  # pylint: disable=invalid-name
-except ImportError:
-    pass
 
 
 HEADERS = (

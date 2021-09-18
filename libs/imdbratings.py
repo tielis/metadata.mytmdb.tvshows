@@ -19,13 +19,13 @@
 # pylint: disable=missing-docstring
 
 
-import re
+from re import compile, search
 from . import api_utils
 from . import settings
 
 IMDB_RATINGS_URL = 'https://www.imdb.com/title/{}/'
-IMDB_RATING_REGEX = re.compile(r'"AggregateRating".*?"ratingValue".*?([\d.]+).*?<')
-IMDB_VOTES_REGEX = re.compile(r'"AggregateRating".*?"ratingCount".*?([\d]+).*?<')
+IMDB_RATING_REGEX = compile(r'"AggregateRating".*?"ratingValue".*?([\d.]+).*?<')
+IMDB_VOTES_REGEX = compile(r'"AggregateRating".*?"ratingCount".*?([\d]+).*?<')
 
 
 def get_details(imdb_id):
@@ -55,14 +55,14 @@ def _parse_imdb_result(input_html):
 
 
 def _parse_imdb_rating(input_html):
-    match = re.search(IMDB_RATING_REGEX, input_html)
+    match = search(IMDB_RATING_REGEX, input_html)
     if (match):
         return float(match.group(1))
     return None
 
 
 def _parse_imdb_votes(input_html):
-    match = re.search(IMDB_VOTES_REGEX, input_html)
+    match = search(IMDB_VOTES_REGEX, input_html)
     if (match):
         return int(match.group(1).replace(',', ''))
     return None

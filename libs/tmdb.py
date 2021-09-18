@@ -18,19 +18,12 @@
 
 """Functions to interact with TMDb API"""
 
-from __future__ import absolute_import, unicode_literals
-
-import unicodedata
+from unicodedata import normalize
 from math import floor
 from pprint import pformat
 from . import cache, data_utils, api_utils, settings, imdbratings, traktratings
 from .utils import logger
 from datetime import datetime
-try:
-    from typing import Text, Optional, Union, List, Dict, Any  # pylint: disable=unused-import
-    InfoType = Dict[Text, Any]  # pylint: disable=invalid-name
-except ImportError:
-    pass
 
 HEADERS = (
     ('User-Agent', 'Kodi TV Show scraper by Team Kodi; contact pkscout@kodi.tv'),
@@ -75,7 +68,7 @@ def search_show(title, year=None):
     else:
         logger.debug('using title of %s to find show' % title)
         search_url = SEARCH_URL
-        params['query'] = unicodedata.normalize('NFKC', title)
+        params['query'] = normalize('NFKC', title)
         if year:
             params['first_air_date_year'] = str(year)
     resp = api_utils.load_info(
@@ -168,18 +161,12 @@ def load_show_info(show_id, ep_grouping=None, named_seasons=None):
     if named_seasons == None:
         named_seasons = []
     show_info = cache.load_show_info_from_cache(show_id)
-    #import web_pdb; web_pdb.set_trace()
     difference = 1201    
     try:  
         difference = (datetime.now() - datetime.fromisoformat(show_info['#scraper_update'])).total_seconds()
     except:
         None
     if difference > 1200:
-
-        f = open('D:\\show_Pickle.txt', "w")
-        f.write(str(datetime.now()) + '   -  start \n')
-        f.close()
-
 
         show_info = {}
 
