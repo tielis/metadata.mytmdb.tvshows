@@ -84,6 +84,10 @@ ENABTRAILER = source_settings.get(
     'enab_trailer', ADDON.getSettingBool('enab_trailer'))
 PLAYERSOPT = source_settings.get(
     'players_opt', ADDON.getSettingString('players_opt')).lower()
+TRAILERCHK = source_settings.get(
+    'trailer_chk', ADDON.getSettingBool('trailer_chk'))
+TRAILERLOG = source_settings.get(
+    'trailer_log', ADDON.getSettingBool('trailer_log'))
 VERBOSELOG = source_settings.get(
     'verboselog', ADDON.getSettingBool('verboselog'))
 CERT_COUNTRY = source_settings.get(

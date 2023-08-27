@@ -19,9 +19,11 @@
 """Misc utils"""
 
 from __future__ import absolute_import, unicode_literals
+from xbmcvfs import translatePath
 
-import xbmc
+import xbmc, unicodedata
 from xbmcaddon import Addon
+from os import path
 
 try:
     from typing import Text, Optional, Any, Dict  # pylint: disable=unused-import
@@ -70,3 +72,37 @@ def safe_get(dct, key, default=None):
     if key in dct and dct[key] is not None:
         return dct[key]
     return default
+
+def trailer_log(key, msg, title):
+   
+    addonDataDir = translatePath(Addon(ADDON_ID).getAddonInfo('profile'))    
+    Logtxt = path.join(addonDataDir, "Trailer_log.txt")
+
+    lines =  []
+    found = False
+    title = unicodedata.normalize('NFC',str(title))
+    txt_msg = key + msg + title + '\n'
+    try:
+        makedirs(addonDataDir)
+       
+    except:   
+        pass
+    f = open(Logtxt, "a+", encoding='utf-8')
+    f.seek(0)
+    lines = f.readlines()
+    f.close()
+    if lines:
+        for i, line in enumerate(lines):        
+            if title in line:
+                found = True
+                if not msg in line:
+                    lines[i] = txt_msg
+                    f = open(Logtxt, "w", encoding='utf-8')
+                    f.write("".join(lines))
+                    f.close()
+                break        
+    if not found:
+        f = open(Logtxt, "a", encoding='utf-8')
+        f.write(txt_msg)
+        f.close()  
+    return

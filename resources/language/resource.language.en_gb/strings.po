@@ -167,3 +167,11 @@ msgstr ""
 msgctxt "#30308"
 msgid "Tubed"
 msgstr ""
+
+msgctxt "#30309"
+msgid "URL check (slower)"
+msgstr ""
+
+msgctxt "#30310"
+msgid "Trailer log"
+msgstr ""
